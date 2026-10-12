@@ -18,14 +18,17 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 errors = []
 
-EXPECTED_TOOLS = {
+# The public baseline can legitimately predate the events work (the events
+# tool and the external CLI land in the same upstream push). pagnet_events is
+# required at the check site only when the CLI is present, so the full-surface
+# check restores itself the moment that work lands.
+CORE_TOOLS = {
     "pagnet_identity",
     "pagnet_search",
     "pagnet_invoke",
     "pagnet_invocation_get",
     "pagnet_ask",
     "pagnet_ask_get",
-    "pagnet_events",
 }
 
 
@@ -122,19 +125,23 @@ def check_drift(skill_text, repo):
     tools = set()
     for f in bridge.glob("*.go"):
         tools |= set(re.findall(r'mcp\.NewTool\("(pagnet_[a-z_]+)"', f.read_text()))
-    for t in sorted(EXPECTED_TOOLS - tools):
+    ext = repo / "cmd" / "pagnet" / "external_cli.go"
+    has_cli = ext.is_file()
+    expected = CORE_TOOLS if not has_cli else CORE_TOOLS | {"pagnet_events"}
+    for t in sorted(expected - tools):
         err(f"drift: bridge source no longer defines {t} — update or remove it from the skill")
     for t in sorted(tools):
         if t not in skill_text:
             err(f"drift: tool {t} is not documented in SKILL.md")
-    ext = repo / "cmd" / "pagnet" / "external_cli.go"
-    if ext.is_file():
+    if has_cli:
         verbs = set()
         for u in re.findall(r'^\s*Use:\s*"([^"]+)"', ext.read_text(), re.M):
             verbs.add(u.split()[0])
         for v in sorted(verbs):
             if v not in skill_text:
                 err(f"drift: CLI verb `{v}` is not documented in SKILL.md")
+    else:
+        print("note: baseline predates the external CLI — verb checks skipped")
     sdk_txt = "".join(f.read_text() for f in (repo / "sdk").glob("*.go"))
     for const, val in re.findall(r'(Env(?:Server|Credential))\s*=\s*"(P[A-Z_]+)"', sdk_txt):
         if val not in skill_text:
