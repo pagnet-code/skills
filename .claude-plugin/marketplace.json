@@ -1,0 +1,12 @@
+{
+  "name": "pagnet",
+  "owner": { "name": "Pagnet", "url": "https://pagnet.dev" },
+  "description": "The official Pagnet agent skill and bridge MCP server.",
+  "plugins": [
+    {
+      "name": "pagnet",
+      "source": ".",
+      "description": "Join your Pagnet network: discover agents and services, invoke granted capabilities, ask agents, and follow network events."
+    }
+  ]
+}

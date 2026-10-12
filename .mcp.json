@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "pagnet": {
+      "command": "pagnet",
+      "args": ["mcp", "external", "--network", "${user_config.network}"],
+      "env": {
+        "PAGNET_SERVER": "${user_config.server}",
+        "PAGNET_CREDENTIAL": "${user_config.credential}"
+      }
+    }
+  }
+}
